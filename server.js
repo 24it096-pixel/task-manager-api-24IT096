@@ -1,10 +1,19 @@
 const express = require('express');
+const mongoose = require('mongoose');
+require('dotenv').config();
+
+const Task = require('./models/Task');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('MongoDB connected'))
+  .catch((err) => console.error('MongoDB connection error:', err));
 
 // 1. Global Logging Middleware
 app.use((req, res, next) => {
@@ -26,78 +35,74 @@ const requireJsonContent = (req, res, next) => {
 
 app.use(requireJsonContent);
 
-// 3. ID Validation Middleware (route-specific)
-const validateId = (req, res, next) => {
-  const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) {
-    return res.status(400).json({ error: 'Invalid ID format. ID must be an integer.' });
-  }
-  req.validatedId = id; // attach validated id to request object
-  next();
-};
-
-// In-memory data store
-let tasks = [];
-let nextId = 1;
-
 // CRUD Routes
 
 // GET /tasks - Retrieve all tasks
-app.get('/tasks', (req, res) => {
-  res.status(200).json(tasks);
+app.get('/tasks', async (req, res, next) => {
+  try {
+    const tasks = await Task.find({});
+    res.status(200).json(tasks);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /tasks/:id - Retrieve a specific task by ID
+app.get('/tasks/:id', async (req, res, next) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    res.status(200).json(task);
+  } catch (error) {
+    next(error);
+  }
 });
 
 // POST /tasks - Create a new task
-app.post('/tasks', (req, res) => {
-  const { title, description } = req.body;
-  if (!title) {
-    return res.status(400).json({ error: 'Task title is required' });
+app.post('/tasks', async (req, res, next) => {
+  try {
+    // Mongoose validation will handle missing title, invalid priority, etc.
+    const newTask = await Task.create(req.body);
+    res.status(201).json(newTask);
+  } catch (error) {
+    next(error);
   }
-  
-  const newTask = {
-    id: nextId++,
-    title,
-    description: description || '',
-    completed: false
-  };
-  
-  tasks.push(newTask);
-  res.status(201).json(newTask);
 });
 
 // PUT /tasks/:id - Update an existing task
-app.put('/tasks/:id', validateId, (req, res) => {
-  const id = req.validatedId;
-  const { title, description, completed } = req.body;
-  
-  const taskIndex = tasks.findIndex(t => t.id === id);
-  if (taskIndex === -1) {
-    return res.status(404).json({ error: 'Task not found' });
+app.put('/tasks/:id', async (req, res, next) => {
+  try {
+    const updatedTask = await Task.findByIdAndUpdate(
+      req.params.id, 
+      req.body, 
+      { new: true, runValidators: true } // Return updated document and run schema validation
+    );
+    
+    if (!updatedTask) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    
+    res.status(200).json(updatedTask);
+  } catch (error) {
+    next(error);
   }
-  
-  // Update task
-  const updatedTask = {
-    ...tasks[taskIndex],
-    title: title !== undefined ? title : tasks[taskIndex].title,
-    description: description !== undefined ? description : tasks[taskIndex].description,
-    completed: completed !== undefined ? completed : tasks[taskIndex].completed
-  };
-  
-  tasks[taskIndex] = updatedTask;
-  res.status(200).json(updatedTask);
 });
 
 // DELETE /tasks/:id - Delete a task
-app.delete('/tasks/:id', validateId, (req, res) => {
-  const id = req.validatedId;
-  const taskIndex = tasks.findIndex(t => t.id === id);
-  
-  if (taskIndex === -1) {
-    return res.status(404).json({ error: 'Task not found' });
+app.delete('/tasks/:id', async (req, res, next) => {
+  try {
+    const deletedTask = await Task.findByIdAndDelete(req.params.id);
+    
+    if (!deletedTask) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    
+    res.status(200).json({ message: 'Task deleted successfully' });
+  } catch (error) {
+    next(error);
   }
-  
-  tasks.splice(taskIndex, 1);
-  res.status(200).json({ message: 'Task deleted successfully' });
 });
 
 // 4. 404 Handler for undefined routes
@@ -108,6 +113,21 @@ app.use((req, res, next) => {
 // 5. Global Error Handler (must be the last middleware)
 app.use((err, req, res, next) => {
   console.error('An error occurred:', err.message); // Log error internally
+  
+  // Handle Mongoose Validation Errors
+  if (err.name === 'ValidationError') {
+    const messages = Object.values(err.errors).map(val => val.message);
+    return res.status(400).json({ 
+      error: 'Validation failed', 
+      details: messages 
+    });
+  }
+  
+  // Handle Mongoose CastError (e.g. invalid ObjectId)
+  if (err.name === 'CastError') {
+    return res.status(400).json({ error: 'Invalid ID format' });
+  }
+  
   // Do not expose err.stack to the client
   res.status(500).json({ error: 'Internal Server Error' });
 });
