@@ -1,14 +1,18 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const cors = require('cors');
 require('dotenv').config();
 
 const Task = require('./models/Task');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+
+// Enable CORS
+app.use(cors());
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
@@ -77,7 +81,7 @@ app.put('/tasks/:id', async (req, res, next) => {
     const updatedTask = await Task.findByIdAndUpdate(
       req.params.id, 
       req.body, 
-      { new: true, runValidators: true } // Return updated document and run schema validation
+      { returnDocument: 'after', runValidators: true } // Return updated document and run schema validation
     );
     
     if (!updatedTask) {
