@@ -124,7 +124,7 @@ export default function App() {
       <header className="app-header">
         <div className="header-brand">
           <h1>Task Master</h1>
-          <span className="badge-p7">Practical 7: JWT Auth & Middleware</span>
+          <p className="app-subtitle">Full Stack React + Node + MongoDB</p>
         </div>
         {currentUser && (
           <div className="user-nav">

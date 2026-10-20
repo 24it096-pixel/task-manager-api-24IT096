@@ -34,18 +34,20 @@ MongoDB Atlas
 
 ## Features
 
-### Practical 6: Full Stack Integration
-- End-to-end task management CRUD (Create, Read, Update, Delete).
-- Data persisted in MongoDB Atlas cloud database.
-- Optimistic UI updates on task creation.
-- Confirmation dialog before task deletion.
-- Auto-dismissing Toast notification system.
+### Authentication & Authorization
+- User registration and login flow.
+- Passwords securely hashed with `bcryptjs` before persisting to database.
+- Stateless session management using JSON Web Tokens (`jsonwebtoken`) with 1-hour expiration.
+- Custom authentication middleware verifying `Authorization: Bearer <token>` on protected routes.
+- Protected `/me` endpoint to retrieve authenticated user profile.
+- Client-side token storage in `localStorage` with automatic 401 token expiry detection and re-login prompt.
+- Secure environment configuration: `.env` excluded via `.gitignore`.
 
-### Practical 7: Authentication & Middleware Pipeline
-- User registration and login with secure password hashing via `bcryptjs`.
-- JWT token generation (`jsonwebtoken`) with 1-hour expiration.
-- Custom authentication middleware (`middleware/auth.js`) protecting all task routes with `Bearer <token>`.
-- Server-side request validation middleware (`middleware/validateTask.js`) rejecting malformed requests with HTTP 400.
-- Protected `/me` endpoint to fetch currently logged-in user profile.
-- Client-side token storage in `localStorage` with automatic 401 token expiry logout and re-login prompt.
-- Secure configuration: `.env` excluded via `.gitignore` with `JWT_SECRET`.
+### Task Management & UI
+- Complete CRUD operations (Create, Read, Update, Delete) for tasks.
+- Cloud database persistence using MongoDB Atlas & Mongoose schema models.
+- Optimistic UI updates when creating and checking off tasks.
+- Confirmation dialog before task deletion.
+- Auto-dismissing Toast notification system for success and error states.
+- Server-side request validation middleware to reject malformed requests with HTTP 400.
+- CORS enabled for seamless local communication between Vite and Express servers.
