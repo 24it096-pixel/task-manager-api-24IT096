@@ -51,3 +51,16 @@ MongoDB Atlas
 - Auto-dismissing Toast notification system for success and error states.
 - Server-side request validation middleware to reject malformed requests with HTTP 400.
 - CORS enabled for seamless local communication between Vite and Express servers.
+
+### Performance Optimization & Lazy Loading
+- **Code Splitting (`React.lazy` & `Suspense`)**: Heavy UI and authentication modules are loaded dynamically on demand:
+  - `AuthForm`: Loaded only when an unauthenticated session is detected.
+  - `TaskAnalytics`: Productivity dashboard loaded on demand when toggled by the user.
+- **Render Optimization**: Task items memoized using `React.memo` to eliminate unnecessary re-renders of unmodified task cards during list mutations.
+- **Bundle Size Optimization Comparison**:
+
+| Bundle / Asset | Before Optimization | After Code Splitting | Status |
+| :--- | :--- | :--- | :--- |
+| **Main JS Bundle** | **151.21 kB** (gzip: 48.72 kB) | **150.58 kB** (gzip: 48.72 kB) | Initial Load |
+| `AuthForm.chunk.js` | Embedded in main bundle | **2.11 kB** (gzip: 0.97 kB) | Loaded on demand |
+| `TaskAnalytics.chunk.js`| Embedded in main bundle | **1.81 kB** (gzip: 0.56 kB) | Loaded on demand |

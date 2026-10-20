@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { fetchTasks, createTask, updateTask, deleteTask, fetchMe } from './api';
 import TaskForm from './components/TaskForm';
 import TaskList from './components/TaskList';
 import Toast from './components/Toast';
-import AuthForm from './components/AuthForm';
+
+// Code Splitting with React.lazy(): Loaded only on demand
+const AuthForm = lazy(() => import('./components/AuthForm'));
+const TaskAnalytics = lazy(() => import('./components/TaskAnalytics'));
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -16,6 +19,7 @@ export default function App() {
   });
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [toasts, setToasts] = useState([]);
 
   const addToast = useCallback((message, type = 'info') => {
@@ -75,6 +79,7 @@ export default function App() {
     localStorage.removeItem('user');
     setCurrentUser(null);
     setTasks([]);
+    setShowAnalytics(false);
     addToast('Logged out successfully', 'info');
   };
 
@@ -129,6 +134,12 @@ export default function App() {
         {currentUser && (
           <div className="user-nav">
             <span className="user-email">👤 {currentUser.email}</span>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => setShowAnalytics(prev => !prev)}
+            >
+              {showAnalytics ? '✕ Hide Stats' : '📊 Analytics'}
+            </button>
             <button className="btn btn-secondary btn-sm" onClick={handleLogout}>
               Logout
             </button>
@@ -137,15 +148,26 @@ export default function App() {
       </header>
 
       {!currentUser ? (
-        <AuthForm
-          onAuthSuccess={(user) => {
-            setCurrentUser(user);
-            loadTasks();
-          }}
-          addToast={addToast}
-        />
+        <Suspense fallback={<div className="loading-spinner"></div>}>
+          <AuthForm
+            onAuthSuccess={(user) => {
+              setCurrentUser(user);
+              loadTasks();
+            }}
+            addToast={addToast}
+          />
+        </Suspense>
       ) : (
         <main className="dashboard-content">
+          {showAnalytics && (
+            <Suspense fallback={<div className="loading-spinner"></div>}>
+              <TaskAnalytics
+                tasks={tasks}
+                onClose={() => setShowAnalytics(false)}
+              />
+            </Suspense>
+          )}
+
           <TaskForm onAddTask={handleAddTask} />
           <TaskList
             tasks={tasks}

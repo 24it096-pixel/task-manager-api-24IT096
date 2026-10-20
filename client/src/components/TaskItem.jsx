@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { memo } from 'react';
 
-export default function TaskItem({ task, onToggle, onDelete }) {
+function TaskItem({ task, onToggle, onDelete }) {
   const handleDelete = () => {
     // Confirmation dialog as requested in the assignment
     if (window.confirm(`Are you sure you want to delete "${task.title}"?`)) {
@@ -36,3 +36,6 @@ export default function TaskItem({ task, onToggle, onDelete }) {
     </div>
   );
 }
+
+// React.memo optimization: Prevents unnecessary re-renders of unmodified task rows
+export default memo(TaskItem);
