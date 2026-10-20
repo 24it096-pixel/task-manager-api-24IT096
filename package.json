@@ -1,13 +1,14 @@
 {
-  "name": "task-manager-api",
+  "name": "task-manager-api-24IT096",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Full Stack Task Manager application with Express, React, MongoDB, and JWT Auth",
+  "main": "server.js",
   "scripts": {
+    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "Student 24IT096",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
